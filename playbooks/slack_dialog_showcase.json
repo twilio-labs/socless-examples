@@ -1,0 +1,134 @@
+{
+  "Playbook": "SlackDialogShowcase",
+  "Comment": "Tutorial showing how to use the Human Response Workflow",
+  "StartAt": "Ask_Users_Mood",
+  "States": {
+    "Ask_Users_Mood": {
+      "Type": "Task",
+      "Parameters": {
+        "target": "$.artifacts.event.details.target_user",
+        "target_type": "user",
+        "text": "It's a good day outside",
+        "prompt_text": "How're you feeling",
+        "yes_text": "Good!",
+        "no_text": "Bummed :(",
+        "receiver": "Await_User_Mood_Response"
+      },
+      "Resource": "${{cf:socless-slack-${{self:provider.stage}}.PromptForConfirmation}}",
+      "Next": "Await_User_Mood_Response"
+    },
+    "Await_User_Mood_Response": {
+      "Type": "Task",
+      "Resource": "${{cf:socless-${{self:provider.stage}}.AwaitMessageResponseActivity}}",
+      "Next": "Request_Details_Using_Dialog"
+    },
+    "Request_Details_Using_Dialog": {
+      "Type": "Task",
+      "Resource": "${{cf:socless-slack-${{self:provider.stage}}.SendDialog}}",
+      "Parameters": {
+        "receiver": "Await_User_Dialog_Response",
+        "trigger_id": "$.results._Last_Saved_Results.trigger_id",
+        "title": "New Mood Journal",
+        "elements": [
+          {
+            "label": "Mood Journal",
+            "name": "mood_details",
+            "placeholder": "Tell me more about your mood",
+            "type": "text"
+          }
+        ],
+        "submit_label": "Save"
+      },
+      "Next": "Await_User_Dialog_Response"
+    },
+    "Await_User_Dialog_Response": {
+      "Type": "Task",
+      "Resource": "${{cf:socless-${{self:provider.stage}}.AwaitMessageResponseActivity}}",
+      "Next": "Check_Dialog_Submission_Status"
+    },
+    "Check_Dialog_Submission_Status": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.results.type",
+          "StringEquals": "dialog_submission",
+          "Next": "Dialog_Submitted"
+        },
+        {
+          "Variable": "$.results.type",
+          "StringEquals": "dialog_cancellation",
+          "Next": "Dialog_Cancelled"
+        }
+      ],
+      "Default": "Dialog_Cancelled"
+    },
+    "Dialog_Submitted": {
+      "Type": "Pass",
+      "Next": "Thank_User"
+    },
+    "Dialog_Cancelled": {
+      "Type": "Pass",
+      "Next": "Prompt_User_To_Retry"
+    },
+    "Prompt_User_To_Retry": {
+      "Type": "Task",
+      "Resource": "${{cf:socless-slack-${{self:provider.stage}}.PromptForConfirmation}}",
+      "Parameters": {
+        "receiver": "Await_Prompt_Response",
+        "text": "I noticed you cancelled the dialog",
+        "prompt_text": "Would you like to retry?",
+        "target": "$.artifacts.event.details.target_user",
+        "target_type": "user"
+      },
+      "Next": "Await_Prompt_Response"
+    },
+    "Await_Prompt_Response": {
+      "Type": "Task",
+      "Resource": "${{cf:socless-${{self:provider.stage}}.AwaitMessageResponseActivity}}",
+      "Next": "Check_Retry_Decision"
+    },
+    "Check_Retry_Decision": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.results.actions.value",
+          "StringEquals": "true",
+          "Next": "User_Wants_To_Retry"
+        },
+        {
+          "Variable": "$.results.actions.value",
+          "StringEquals": "false",
+          "Next": "User_Doesnt_Want_To_Retry"
+        }
+      ],
+      "Default": "User_Doesnt_Want_To_Retry"
+    },
+    "User_Doesnt_Want_To_Retry": {
+      "Type": "Pass",
+      "Next": "Thank_User"
+    },
+    "User_Wants_To_Retry": {
+      "Type": "Pass",
+      "Next": "Request_Details_Using_Dialog"
+    },
+    "Thank_User": {
+      "Type": "Task",
+      "Resource": "${{cf:socless-slack-${{self:provider.stage}}.SendMessage}}",
+      "Parameters": {
+        "target": "$.artifacts.event.details.target_user",
+        "target_type": "user",
+        "message_template": "Thanks for the information! Enjoy the rest of your day"
+      },
+      "Next": "Close_Investigation"
+    },
+    "Close_Investigation": {
+      "Type": "Task",
+      "Resource": "${{cf:socless-${{self:provider.stage}}.SetInvestigationStatus}}",
+      "Parameters": {
+        "investigation_id": "$.artifacts.event.investigation_id",
+        "status": "closed"
+      },
+      "End": true
+    }
+  }
+}

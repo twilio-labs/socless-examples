@@ -1,0 +1,18 @@
+{
+  "Playbook": "ExampleShowingJira",
+  "Comment": "Example Playbook showing how to use a JIRA Integration",
+  "StartAt": "Create_Jira_Ticket",
+  "States": {
+    "Create_Jira_Ticket": {
+      "Type": "Task",
+      "Resource": "${{self:custom.jira.CreateIssue}}",
+      "Parameters": {
+        "summary": "Hello {context.artifacts.details.user}",
+        "project": "IT",
+        "desc": "Hello {context.artifacts.details.user}!\n Your laptop is ready for pick up",
+        "labels": "onboarding"
+      },
+      "End": true
+    }
+  }
+}
