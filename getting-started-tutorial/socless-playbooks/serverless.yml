@@ -1,0 +1,35 @@
+service: socless-playbooks-tutorial
+
+provider:
+  name: aws
+  runtime: python3.7
+  variableSyntax: "\\${{([ :a-zA-Z0-9._,\\-\\/\\(\\)]+?)}}"
+  stage: ${{opt:stage}}
+  region: ${{opt:region}}
+
+plugins:
+  - sls-apb
+
+custom:
+  statesRole: ${{cf:socless-${{self:provider.stage}}.StatesExecutionRoleArn}}
+  socless:
+    CreateEvents: ${{cf:socless-${{self:provider.stage}}.CreateEvents}}
+    MergeParallelOutput: ${{cf:socless-${{self:provider.stage}}.MergeParallelOutput}}
+    Counter: ${{cf:socless-${{self:provider.stage}}.Counter}}
+    AwaitMessageResponseActivity: ${{cf:socless-${{self:provider.stage}}.AwaitMessageResponseActivity}}
+    SetInvestigationStatus: ${{cf:socless-${{self:provider.stage}}.SetInvestigationStatus}}
+    QueryCustomMapping: ${{cf:socless-${{self:provider.stage}}.QueryCustomMapping}}
+    AddCustomMapping: ${{cf:socless-${{self:provider.stage}}.AddCustomMapping}}
+    CacheResults: ${{cf:socless-${{self:provider.stage}}.CacheResults}}
+  tutorial:
+    GeoIP: ${{cf:socless-tutorial-${{self:provider.stage}}.GeoIP}}
+    SendMessage: ${{cf:socless-tutorial-${{self:provider.stage}}.SendMessage}}
+  slack:
+    PromptForConfirmation: ${{cf:socless-slack-${{self:provider.stage}}.PromptForConfirmation}}
+    PromptForResponse: ${{cf:socless-slack-${{self:provider.stage}}.PromptForResponse}}
+    SendMessage: ${{cf:socless-slack-${{self:provider.stage}}.SendMessage}}
+    FindUser: ${{cf:socless-slack-${{self:provider.stage}}.FindUser}}
+    SendDialog: ${{cf:socless-slack-${{self:provider.stage}}.SendDialog}}
+
+  playbooks:
+    - investigate_login
