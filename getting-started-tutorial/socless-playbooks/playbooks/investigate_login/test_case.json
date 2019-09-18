@@ -1,0 +1,10 @@
+{
+  "alert_name": "Suspicious Login",
+  "response_plan": "InvestigateLogin",
+  "details": [
+    {
+      "username": "ubalogun",
+      "ip": "113.63.125.3"
+    }
+  ]
+}

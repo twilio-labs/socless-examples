@@ -1,0 +1,25 @@
+{
+  "Playbook": "InvestigateLogin",
+  "Comment": "Playbook to investigate a login",
+  "StartAt": "Geolocate_IP",
+  "States": {
+    "Geolocate_IP": {
+      "Type": "Task",
+      "Resource": "${{self:custom.tutorial.GeoIP}}",
+      "Parameters": {
+        "ip": "$.artifacts.event.details.ip"
+      },
+      "Next": "Notify_Bat_Signals_Channel"
+    },
+    "Notify_Bat_Signals_Channel": {
+      "Type": "Task",
+      "Resource": "${{self:custom.tutorial.SendMessage}}",
+      "Parameters": {
+        "target": "bat-signals",
+        "target_type": "channel",
+        "message_template": "*Alert: {context.artifacts.event.event_type}*. User `{context.artifacts.event.details.username}` logged in from `{context.results.Geolocate_IP.country}` at coordinates `{context.results.Geolocate_IP.latitude}`, `{context.results.Geolocate_IP.longitude}`"
+      },
+      "Next": "End"
+    }
+  }
+}

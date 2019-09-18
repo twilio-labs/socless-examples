@@ -1,0 +1,85 @@
+service: socless-tutorial
+
+provider:
+  name: aws
+  runtime: python3.7
+  variableSyntax: "\\${{([ ~:a-zA-Z0-9._\\'\",\\-\\/\\(\\)]+?)}}"
+  stage: ${{opt:stage}}
+  region: ${{opt:region}}
+  versionFunctions: false
+  memorySize: 128
+  timeout: 10
+  role: ${{cf:${{self:custom.socless}}.LambdaExecutionRoleArn}}
+  environment:
+    SOCLESS_VAULT: ${{cf:${{self:custom.socless}}.SoclessVault}}
+    SOCLESS_RESULTS_TABLE: ${{cf:${{self:custom.socless}}.ExecutionResultsTable}}
+    MESSAGE_RESPONSES_TABLE: ${{cf:${{self:custom.socless}}.MessageResponsesTable}}
+    SOCLESS_DEDUP_TABLE: ${{cf:${{self:custom.socless}}.DedupTable}}
+    SOCLESS_EVENTS_TABLE: ${{cf:${{self:custom.socless}}.EventsTable}}
+  vpc:
+    securityGroupIds:
+      - ${{cf:${{self:custom.socless}}.LambdaVpcSG}}
+    subnetIds:
+      - ${{cf:${{self:custom.socless}}.PrivateFunctionSubnet}}
+  apiGateway:
+    restApiId: ${{cf:${{self:custom.socless}}.APIGatewayID}}
+    restApiRootResourceId: ${{cf:${{self:custom.socless}}.APIGatewayRootResourceId}}
+
+plugins:
+  - serverless-package-python-functions
+
+
+
+package:
+  individually: true
+
+custom:
+  socless: socless-${{self:provider.stage}}
+  pkgPyFuncs:
+    buildDir: build
+    globalRequirements:
+      - functions/requirements.txt
+
+functions:
+  GeoIP:
+    name: socless_tutorial_geoip
+    handler: lambda_function.lambda_handler
+    description: Integration to geolocate an IP
+    package:
+      include:
+        - functions/geoip
+
+  SendMessage:
+    name: socless_tutorial_send_message
+    handler: lambda_function.lambda_handler
+    description: Send a message using Slack
+    package:
+      include:
+        - functions/send_message
+    environment:
+      SOCLESS_BOT_TOKEN: ${{ssm:/socless/slack/bot_token~true}}
+
+  TutorialEndpoint:
+    name: _socless_tutorial_endpoint
+    handler: lambda_function.lambda_handler
+    description: Receives alerts from our tutorial detection system
+    package:
+      include:
+        - functions/tutorial_endpoint
+    events:
+      - http:
+          path: /tutorial
+          method: post
+
+
+resources:
+  Outputs:
+    GeoIP:
+      Description: ARN of GeoIP Integration
+      Value:
+        Fn::Sub: ${GeoIPLambdaFunction.Arn}
+
+    SendMessage:
+      Description: Arn Of SendMessage Integration
+      Value:
+        Fn::Sub: ${SendMessageLambdaFunction.Arn}
