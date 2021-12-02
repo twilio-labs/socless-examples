@@ -1,5 +1,5 @@
 import slack, os
-from socless import socless_bootstrap, socless_template_string
+from socless import socless_bootstrap
 
 SOCLESS_BOT_TOKEN = os.environ.get('SOCLESS_BOT_TOKEN')
 sc = slack.WebClient(token=SOCLESS_BOT_TOKEN)
@@ -41,7 +41,7 @@ def handle_state(context, target, target_type, message_template):
         target_id = f"#{target}"
 
     # Render the message template and send the message
-    message = socless_template_string(message_template, context)
+    message = message_template
     resp = sc.chat_postMessage(channel=target_id, text=message, as_user=True)
     return resp.data
 
