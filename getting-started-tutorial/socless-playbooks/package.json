@@ -17,7 +17,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "serverless": "1.50.0",
+    "serverless": "2.0.0",
     "sls-apb": "git+ssh://git@github.com/twilio-labs/sls-apb.git"
   },
   "repository": {},
